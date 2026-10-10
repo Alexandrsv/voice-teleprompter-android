@@ -321,8 +321,8 @@ class OverlayController(private val context: Context, private val windowType: In
         val r = dp(22).toFloat()
         val textBox = prompter.parent as View
         val portrait = placement == Placement.PORTRAIT
-        val basePadStart = dp(18)
-        val basePadEnd = dp(14)
+        val basePadStart = dp(app.settings.overlayPadStartDp)
+        val basePadEnd = dp(app.settings.overlayPadEndDp)
 
         root.angle = when (placement) {
             Placement.TURNED_LEFT -> 90
@@ -577,6 +577,12 @@ class OverlayController(private val context: Context, private val windowType: In
                     tuneGroup(R.string.overlay_tune_speed, { "${s.autoScrollWpm}" }, { changeSpeed(-10) }, { changeSpeed(10) }),
                 ),
             )
+            addView(
+                row(
+                    tuneGroup(R.string.overlay_tune_margin_start, { "${s.overlayPadStartDp}" }, { changeMarginStart(-4) }, { changeMarginStart(4) }),
+                    tuneGroup(R.string.overlay_tune_margin_end, { "${s.overlayPadEndDp}" }, { changeMarginEnd(-4) }, { changeMarginEnd(4) }),
+                ),
+            )
         }
     }
 
@@ -651,6 +657,18 @@ class OverlayController(private val context: Context, private val windowType: In
         frame?.let { wm.updateViewLayout(it, params) }
     }
 
+    private fun changeMarginStart(delta: Int) {
+        app.settings.overlayPadStartDp = (app.settings.overlayPadStartDp + delta).coerceIn(0, MAX_MARGIN_DP)
+        applyPlacement()
+        frame?.let { wm.updateViewLayout(it, params) }
+    }
+
+    private fun changeMarginEnd(delta: Int) {
+        app.settings.overlayPadEndDp = (app.settings.overlayPadEndDp + delta).coerceIn(0, MAX_MARGIN_DP)
+        applyPlacement()
+        frame?.let { wm.updateViewLayout(it, params) }
+    }
+
     /** ALWAYS exists from Android 11; on 10 SHORT_EDGES also lets the window reach under the camera cut-out at the top. */
     private fun cutoutMode(): Int = if (Build.VERSION.SDK_INT >= 30) {
         WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
@@ -658,10 +676,12 @@ class OverlayController(private val context: Context, private val windowType: In
         WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
     }
 
-    private companion object {
+    companion object {
         /** The window sits over the camera preview: bigger text would cover the face. The full screen goes to 80. */
         const val MIN_FONT_SP = 14
         const val MAX_FONT_SP = 48
+        /** Half a phone screen is ~180-210 dp: margins may push the text that far. Shared with the rehearsal sheet. */
+        const val MAX_MARGIN_DP = 200
     }
 
     private fun prompterHeight(): Int {

@@ -94,6 +94,13 @@ class PrompterView(context: Context) : View(context) {
 
     val lineHeightPx: Int get() = (paint.fontMetricsInt.let { it.descent - it.ascent } * LINE_SPACING).toInt()
 
+    /** Padding changes the width available for text: re-wrap, not just shift the canvas. */
+    override fun setPadding(left: Int, top: Int, right: Int, bottom: Int) {
+        if (left == paddingLeft && top == paddingTop && right == paddingRight && bottom == paddingBottom) return
+        super.setPadding(left, top, right, bottom)
+        rebuildLayout()
+    }
+
     fun setScript(m: ScriptModel) {
         model = m
         text = SpannableString(m.displayText)

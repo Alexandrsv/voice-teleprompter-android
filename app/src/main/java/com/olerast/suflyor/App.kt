@@ -117,6 +117,22 @@ class Settings(context: Context) {
         get() = prefs.getInt("overlayY2", 0)
         set(v) = prefs.edit().putInt("overlayY2", v).apply()
 
+    /** Horizontal text margins of the floating window, dp. Defaults match the previous constants. */
+    var overlayPadStartDp: Int
+        get() = prefs.getInt("overlayPadStartDp", 18)
+        set(v) = prefs.edit().putInt("overlayPadStartDp", v).apply()
+    var overlayPadEndDp: Int
+        get() = prefs.getInt("overlayPadEndDp", 14)
+        set(v) = prefs.edit().putInt("overlayPadEndDp", v).apply()
+
+    /** Horizontal text margins of the full-screen rehearsal prompter, dp. Defaults match the previous constants. */
+    var fullScreenPadStartDp: Int
+        get() = prefs.getInt("fullScreenPadStartDp", 20)
+        set(v) = prefs.edit().putInt("fullScreenPadStartDp", v).apply()
+    var fullScreenPadEndDp: Int
+        get() = prefs.getInt("fullScreenPadEndDp", 16)
+        set(v) = prefs.edit().putInt("fullScreenPadEndDp", v).apply()
+
     var currentScriptId: String?
         get() = prefs.getString("currentScriptId", null)
         set(v) = prefs.edit().putString("currentScriptId", v).apply()

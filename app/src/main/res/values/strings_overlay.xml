@@ -54,4 +54,6 @@
     <string name="overlay_tune_lines">Lines</string>
     <string name="overlay_tune_background">Background</string>
     <string name="overlay_tune_speed">Speed</string>
+    <string name="overlay_tune_margin_start">Left</string>
+    <string name="overlay_tune_margin_end">Right</string>
 </resources>
