@@ -184,6 +184,8 @@ Tried it on another phone? Open an [issue](https://github.com/olerast67/voice-te
 
 Ideas and votes are welcome in [Issues](https://github.com/olerast67/voice-teleprompter-android/issues).
 
+Found a bug? Open an [issue](https://github.com/olerast67/voice-teleprompter-android/issues) or use the form on olerast.com: [Report a bug](https://olerast.com/security?project=teleprompter). The form is in Russian and needs no GitHub account.
+
 ## FAQ
 
 <details>

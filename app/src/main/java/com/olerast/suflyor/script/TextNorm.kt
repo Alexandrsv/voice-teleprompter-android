@@ -1,6 +1,7 @@
 package com.olerast.suflyor.script
 
 import java.text.Normalizer
+import kotlin.math.abs
 
 /**
  * Word normalization and fuzzy comparison tuned for Russian speech recognition output. English speech uses
@@ -68,8 +69,90 @@ object TextNorm {
         if (p >= 5) return 0.92f
         if (minLen >= 4 && p >= 4 && p >= minLen - 2) return 0.88f
         if (minLen >= 4 && p >= 3 && p >= minLen - 1) return 0.8f
+        if (a.length == b.length && a.length >= REDUCED_MIN_LEN) reducedSimilarity(a, b)?.let { return it }
         return 1f - levenshtein(a, b).toFloat() / maxLen
     }
+
+    /** Words this long are rarely two different words apart by unstressed vowels alone. */
+    private const val REDUCED_MIN_LEN = 6
+
+    /** Unstressed о and а, е and и sound the same: the recognizer hears "алираст" for "Олераст". */
+    private fun reducedPair(x: Char, y: Char): Boolean =
+        (x == 'о' && y == 'а') || (x == 'а' && y == 'о') || (x == 'е' && y == 'и') || (x == 'и' && y == 'е')
+
+    /**
+     * Two words of the same length that differ only in reduced vowels ([reducedPair]), each swap costing half a
+     * letter: "алираст"/"олераст" 0.86. Null if any other letter differs ("палата"/"полета" stays at 0.67).
+     */
+    private fun reducedSimilarity(a: String, b: String): Float? {
+        var swaps = 0
+        for (k in a.indices) {
+            if (a[k] == b[k]) continue
+            if (!reducedPair(a[k], b[k])) return null
+            swaps++
+        }
+        return 1f - 0.5f * swaps / a.length
+    }
+
+    /**
+     * Recognized words regrouped to fit a script that spells letter names ("Би-ту-би" as "би ту би", or glued
+     * "БиТуБи" as "битуби"): the recognizer prints either form whatever the script says.
+     * - A heard word that is not a script word but a glued run of a hyphen chain (exactly, or one letter off) is split
+     *   into the chain's parts: "битуби" becomes "би ту би", "туби" becomes "ту би".
+     * - Two to four heard short words, none of them a script word, that glued give a script word (exactly, or one
+     *   letter off from five letters on) become that word: "би ту би" and "би тубе" become "битуби".
+     * @param chains every glued run of two or more parts of the script's hyphen chains, with its parts.
+     */
+    fun regroupLetterNames(hyp: List<String>, vocab: Set<String>, chains: Map<String, List<String>>): List<String> {
+        if (hyp.size < 2 && chains.isEmpty()) return hyp
+        var out: MutableList<String>? = null
+        var i = 0
+        while (i < hyp.size) {
+            val w = hyp[i]
+            if (w in vocab) {
+                out?.add(w)
+                i++
+                continue
+            }
+            val parts = if (w.length >= 4) chains[w] ?: chains.entries.firstOrNull { nearGlued(w, it.key) }?.value else null
+            if (parts != null) {
+                if (out == null) out = hyp.subList(0, i).toMutableList()
+                out += parts
+                i++
+                continue
+            }
+            val joined = joinAt(hyp, i, vocab)
+            if (joined != null) {
+                if (out == null) out = hyp.subList(0, i).toMutableList()
+                out += joined.first
+                i += joined.second
+                continue
+            }
+            out?.add(w)
+            i++
+        }
+        return out ?: hyp
+    }
+
+    /** The script word that two to four heard short words starting at [i] spell together, and how many words that is. */
+    private fun joinAt(hyp: List<String>, i: Int, vocab: Set<String>): Pair<String, Int>? {
+        for (n in minOf(4, hyp.size - i) downTo 2) {
+            val run = hyp.subList(i, i + n)
+            // Letter names are short; the last one may be heard with a wrong vowel ("тубе").
+            if (run.withIndex().any { (k, p) -> p.length > (if (k == n - 1) 4 else 3) || p in vocab || p.any { it !in 'а'..'я' } }) continue
+            val glued = run.joinToString("")
+            if (glued.length < 4) continue
+            if (glued in vocab) return glued to n
+            if (glued.length < 5) continue
+            val near = vocab.firstOrNull { nearGlued(glued, it) && it.length >= 5 }
+            if (near != null) return near to n
+        }
+        return null
+    }
+
+    /** Same length or one letter more or less, at most one edit apart. */
+    private fun nearGlued(a: String, b: String): Boolean =
+        abs(a.length - b.length) <= 1 && a[0] == b[0] && b.length >= 4 && levenshtein(a, b) <= 1
 
     fun levenshtein(a: String, b: String): Int {
         var prev = IntArray(b.length + 1) { it }

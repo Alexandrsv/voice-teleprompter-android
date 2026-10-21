@@ -72,9 +72,17 @@ enum class SpeechLang(val code: String) {
         EN -> partial !in EnglishNorm.STOP
     }
 
-    /** Recognized words (fillers already removed) made comparable with the script words in [vocab]. */
-    fun prepareHypothesis(hyp: List<String>, vocab: Set<String>, scriptHasDigits: Boolean): List<String> = when (this) {
-        RU -> hyp
+    /**
+     * Recognized words (fillers already removed) made comparable with the script words in [vocab].
+     * @param chains glued runs of the script's hyphen chains of letter names with their parts (Russian only).
+     */
+    fun prepareHypothesis(
+        hyp: List<String>,
+        vocab: Set<String>,
+        scriptHasDigits: Boolean,
+        chains: Map<String, List<String>> = emptyMap(),
+    ): List<String> = when (this) {
+        RU -> TextNorm.regroupLetterNames(hyp, vocab, chains)
         EN -> EnglishNorm.prepareHypothesis(hyp, vocab, scriptHasDigits)
     }
 

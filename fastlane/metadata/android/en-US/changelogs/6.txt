@@ -1,0 +1,1 @@
+Russian scripts: abbreviations written with hyphens (Би-ту-би, Эй-Ай) are boosted in recognition and followed whether heard glued or apart. Names heard with reduced vowels (алираст for Олераст) now move the text. Bug reports without a GitHub account through a form on olerast.com.

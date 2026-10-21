@@ -13,6 +13,11 @@ data class Token(
     val weight: Float,
     /** First word of a displayed line, sentence or paragraph: where readers restart or jump to. */
     val anchor: Boolean = false,
+    /**
+     * Joined to the next token by a hyphen in a chain of letter names like "Би-ту-би" or "Эй-Ай" (Russian only, see
+     * ScriptLayout.markLetterChains). The recognizer prints such a chain glued ("битуби") or apart ("би ту би").
+     */
+    val hyphenNext: Boolean = false,
 )
 
 class ScriptModel(
@@ -39,12 +44,24 @@ class ScriptModel(
  * would print them. Russian takes the written word, as before English existed; English takes the normalized form, so
  * apostrophes are straight and "Mr." is "mister". The recognizer keeps only what its vocabulary can encode.
  */
-fun ScriptModel.biasWords(): List<String> = tokens.asSequence()
-    .filter { it.spoken && it.weight >= 1f }
-    .map {
-        when (lang) {
-            SpeechLang.RU -> displayText.substring(it.start, it.end).lowercase()
-            SpeechLang.EN -> it.norm
+fun ScriptModel.biasWords(): List<String> = tokens.indices.asSequence()
+    .mapNotNull { i ->
+        val t = tokens[i]
+        when {
+            // A chain of letter names is too short to bias part by part; glued, the model prints it as written.
+            t.hyphenNext && (i == 0 || !tokens[i - 1].hyphenNext) -> {
+                var k = i
+                val glued = StringBuilder()
+                while (true) {
+                    glued.append(displayText, tokens[k].start, tokens[k].end)
+                    if (!tokens[k].hyphenNext) break
+                    k++
+                }
+                glued.toString().lowercase()
+            }
+            !t.spoken || t.weight < 1f -> null
+            lang == SpeechLang.RU -> displayText.substring(t.start, t.end).lowercase()
+            else -> t.norm
         }
     }
     .distinct()
@@ -90,7 +107,37 @@ object ScriptLayout {
                 anchor = startsLine(text, m.range.first, lang),
             )
         }.toList()
-        return ScriptModel(doc.title, text, tokens, emphasis, notes.sortedBy { it.first }, lang)
+        val marked = if (lang == SpeechLang.RU) markLetterChains(text, tokens) else tokens
+        return ScriptModel(doc.title, text, marked, emphasis, notes.sortedBy { it.first }, lang)
+    }
+
+    /** Hyphens inside a word: "-", the Unicode hyphen and the non-breaking hyphen. */
+    private val HYPHENS = setOf("-", "\u2010", "\u2011")
+
+    /** Parts of "кое-как", "ну-ка", "из-за": ordinary words, not letter names. */
+    private val HYPHEN_PARTICLES = setOf("кое", "ка", "де", "тка", "с")
+
+    /**
+     * Marks chains of letter names written with hyphens ("Би-ту-би", "Эй-Ай", "Ай-ти") with [Token.hyphenNext]: two
+     * or more spoken Cyrillic parts of up to three letters, none of them a function word or particle ("кто-то",
+     * "из-за", "кое-где" stay as they are), four or more letters together.
+     */
+    private fun markLetterChains(text: String, tokens: List<Token>): List<Token> {
+        fun isPart(t: Token) = t.spoken && t.norm.length <= 3 && t.norm.all { it in 'а'..'я' } &&
+            TextNorm.weight(t.norm) > 0.2f && t.norm !in HYPHEN_PARTICLES
+        var out: MutableList<Token>? = null
+        var i = 0
+        while (i < tokens.size) {
+            var k = i
+            while (k + 1 < tokens.size && text.substring(tokens[k].end, tokens[k + 1].start) in HYPHENS) k++
+            val run = i..k
+            if (k > i && run.all { isPart(tokens[it]) } && run.sumOf { tokens[it].norm.length } >= 4) {
+                if (out == null) out = tokens.toMutableList()
+                for (j in i until k) out[j] = tokens[j].copy(hyphenNext = true)
+            }
+            i = k + 1
+        }
+        return out ?: tokens
     }
 
     /**

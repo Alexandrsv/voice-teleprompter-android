@@ -2,6 +2,12 @@
 
 All notable changes to Suflyor. Versions follow `versionName` in `app/build.gradle.kts`; each release's notes are taken from its section here.
 
+## 0.6 — 2026-10-21
+
+- **Letter names in Russian scripts.** Abbreviations written with hyphens, like "Би-ту-би" or "Эй-Ай", are now boosted in the recognizer as one word, and the text follows whether the recognizer prints them glued ("битуби") or apart ("би ту би", "би тубе"). Before, a line like "Это мои Би-ту-би Эй-Ай СааС проекты" could leave the highlight several words behind until the next line. Ordinary hyphenated words ("кто-то", "из-за") are not affected.
+- **Names heard with reduced vowels.** Unstressed о/а and е/и in long words count as close: a name written "Олераст" and heard as "алираст" now moves the text.
+- **Bug reports without a GitHub account:** a form on olerast.com, linked from the README, the website and the issue chooser.
+
 ## 0.5 — 2026-09-29
 
 - **Scrolling by sound.** A third scroll mode next to voice and timer: the text moves at the set speed while you talk and waits while you're quiet. It needs no speech model, so it works for a script in any language.

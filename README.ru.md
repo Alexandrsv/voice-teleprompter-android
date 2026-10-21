@@ -164,6 +164,8 @@ cd suflyor
 
 Идеи и голоса за них — в [Issues](https://github.com/olerast67/voice-teleprompter-android/issues).
 
+Нашёл баг? Напиши в [Issues](https://github.com/olerast67/voice-teleprompter-android/issues) или через форму на olerast.com: [Сообщить о баге](https://olerast.com/security?project=teleprompter). Для неё не нужен аккаунт GitHub.
+
 ## Частые вопросы
 
 <details>

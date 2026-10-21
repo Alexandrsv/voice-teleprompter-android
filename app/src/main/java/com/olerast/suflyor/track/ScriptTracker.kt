@@ -54,6 +54,21 @@ class ScriptTracker(tokens: List<Token>, private val lang: SpeechLang = SpeechLa
     private val scriptHasDigits = words.any { it.isNotEmpty() && it[0].isDigit() }
     private val strictGaps = lang.strictGapRuns
 
+    /** Every glued run of two or more parts of a hyphen chain of letter names ("битуби", "туби"), with its parts. */
+    private val chains: Map<String, List<String>> = HashMap<String, List<String>>().also { map ->
+        var j = 0
+        while (j < spokenIdx.size) {
+            var k = j
+            while (k + 1 < spokenIdx.size && tokens[spokenIdx[k]].hyphenNext && spokenIdx[k + 1] == spokenIdx[k] + 1) k++
+            for (a in j until k) for (b in a + 1..k) {
+                val parts = words.slice(a..b)
+                val glued = parts.joinToString("")
+                if (glued.length >= 4) map.putIfAbsent(glued, parts)
+            }
+            j = k + 1
+        }
+    }
+
     // DP rows, allocated once: only rows i-1 and i are live, plus a copy of row m-1 for candidate extraction.
     private val rowA = Row(words.size + 1)
     private val rowB = Row(words.size + 1)
@@ -115,7 +130,7 @@ class ScriptTracker(tokens: List<Token>, private val lang: SpeechLang = SpeechLa
     /** @param hypothesis normalized recognized words, oldest first (finalized history + current partial). */
     fun onHypothesis(hypothesis: List<String>): Update {
         val heard = hypothesis.filter { it.isNotEmpty() && it !in lang.fillers }
-        val hyp = lang.prepareHypothesis(heard, vocabSet, scriptHasDigits).takeLast(TAIL)
+        val hyp = lang.prepareHypothesis(heard, vocabSet, scriptHasDigits, chains).takeLast(TAIL)
         if (hyp.isEmpty() || hyp == lastHyp || size == 0) return noMove("no new words")
         lastHyp = hyp
 
