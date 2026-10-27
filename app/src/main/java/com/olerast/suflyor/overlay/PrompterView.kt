@@ -142,8 +142,17 @@ class PrompterView(context: Context) : View(context) {
         invalidate()
     }
 
+    /** Left edge of the text: the left padding, shrunk together with the right one when they leave too little room. */
+    private var textLeft = 0
+
     private fun rebuildLayout() {
-        val w = width - paddingLeft - paddingRight
+        // Margins are the user's choice (up to 200 dp each); together they may take at most two thirds of the width,
+        // or the text would vanish in a narrow window.
+        val sides = paddingLeft + paddingRight
+        val maxSides = width - width / 3
+        val scale = if (sides > maxSides && sides > 0) maxSides.toFloat() / sides else 1f
+        textLeft = (paddingLeft * scale).toInt()
+        val w = width - textLeft - (paddingRight * scale).toInt()
         if (w <= 0) {
             layout = null
             return
@@ -175,7 +184,7 @@ class PrompterView(context: Context) : View(context) {
         canvas.save()
         if (mirrorX || mirrorY) canvas.scale(if (mirrorX) -1f else 1f, if (mirrorY) -1f else 1f, width / 2f, height / 2f)
         canvas.clipRect(0, 0, width, height)
-        canvas.translate(paddingLeft.toFloat(), paddingTop - posY)
+        canvas.translate(textLeft.toFloat(), paddingTop - posY)
         if (model.tokens.isNotEmpty() && nextToken < model.tokens.size) {
             val top = l.getLineTop(currentLine).toFloat()
             val bottom = l.getLineBottom(currentLine).toFloat() - (LINE_SPACING - 1f) * lineHeightPx / LINE_SPACING
@@ -203,7 +212,7 @@ class PrompterView(context: Context) : View(context) {
             val l = layout ?: return false
             val y = (e.y - paddingTop + posY).toInt()
             val line = l.getLineForVertical(y)
-            val offset = l.getOffsetForHorizontal(line, e.x - paddingLeft)
+            val offset = l.getOffsetForHorizontal(line, e.x - textLeft)
             // The word under the finger, staying on the tapped line: the end of a word or the empty space to the
             // right of a line must not select the next word or line.
             val ls = l.getLineStart(line)
