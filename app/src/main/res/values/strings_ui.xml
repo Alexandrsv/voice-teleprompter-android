@@ -206,6 +206,8 @@
     <string name="library_add_archive">From a backup</string>
     <string name="library_add_archive_hint">A zip saved with Save all scripts</string>
     <string name="rehearsal_view">View</string>
+    <string name="rehearsal_hide_controls">Hide controls</string>
+    <string name="rehearsal_show_controls">Show controls</string>
     <string name="scroll_mode_voice">Voice</string>
     <string name="scroll_mode_auto">Speed</string>
     <string name="scroll_mode_sound">Sound</string>

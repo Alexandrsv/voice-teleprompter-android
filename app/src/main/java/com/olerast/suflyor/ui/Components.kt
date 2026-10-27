@@ -163,9 +163,17 @@ fun StepperRow(title: String, value: String, subtitle: String? = null, onMinus: 
 }
 
 @Composable
-fun RoundIcon(@DrawableRes res: Int, description: String, onClick: () -> Unit, size: Dp = 38.dp, bg: Color = Palette.SurfaceHigh, tint: Color = Palette.Text) {
+fun RoundIcon(
+    @DrawableRes res: Int,
+    description: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    size: Dp = 38.dp,
+    bg: Color = Palette.SurfaceHigh,
+    tint: Color = Palette.Text,
+) {
     Box(
-        Modifier.size(size).clip(CircleShape).background(bg).clickable(onClick = onClick),
+        modifier.size(size).clip(CircleShape).background(bg).clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) { Ic(res, description, tint = tint, size = size * 0.55f) }
 }

@@ -1,5 +1,6 @@
 package com.olerast.suflyor.ui
 
+import android.content.res.Configuration
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -34,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
@@ -73,31 +75,22 @@ fun RehearsalScreen(onBack: () -> Unit) {
         }
     }
 
+    // Landscape has little height: all controls share one row under the text. Either way they can be hidden.
+    val landscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+    var hidden by remember { mutableStateOf(s.fullScreenControlsHidden) }
+    val setHidden = { v: Boolean ->
+        hidden = v
+        s.fullScreenControlsHidden = v
+    }
+
     Column(Modifier.fillMaxSize().background(Color.Black).statusBarsPadding().navigationBarsPadding()) {
-        Row(Modifier.fillMaxWidth().padding(start = 4.dp, end = 12.dp, top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) { Ic(R.drawable.ic_back, stringResource(R.string.common_cd_back)) }
-            val (color, label) = statusOf(state)
-            StatusDot(color)
-            Spacer(Modifier.width(8.dp))
-            Text(
-                label,
-                style = MaterialTheme.typography.labelMedium,
-                color = Palette.TextSecondary,
-                maxLines = 1,
-                modifier = Modifier.weight(1f),
-            )
-            LevelMeter(state.levelDb, state.silencedBySystem == true || state.digitalSilence, Modifier.width(48.dp))
-            Spacer(Modifier.width(10.dp))
-            // One labelled button for everything about how the text looks: size, mirror, speed.
-            Text(
-                stringResource(R.string.rehearsal_view),
-                style = MaterialTheme.typography.labelLarge,
-                color = if (mirror != MirrorMode.OFF) Palette.Accent else Palette.Text,
-                modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(Palette.SurfaceHigh)
-                    .clickable { showView = true }.padding(horizontal = 14.dp, vertical = 8.dp),
-            )
+        if (!hidden && !landscape) {
+            Row(Modifier.fillMaxWidth().padding(start = 4.dp, end = 12.dp, top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                StatusPart(state, onBack, Modifier.weight(1f))
+                ViewPart(state, mirror, onView = { showView = true }, onHide = { setHidden(true) })
+            }
         }
-        // A failed microphone or recognizer would otherwise look like plain silence.
+        // A failed microphone or recognizer would otherwise look like plain silence; shown with hidden controls too.
         state.error?.let { error ->
             Text(
                 error.message(LocalContext.current),
@@ -127,33 +120,29 @@ fun RehearsalScreen(onBack: () -> Unit) {
                     fontWeight = FontWeight.Bold,
                 )
             }
-        }
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 14.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            RoundIcon(R.drawable.ic_replay, stringResource(R.string.common_cd_restart), { app.engine.restart() }, size = 48.dp)
-            RoundIcon(R.drawable.ic_up, stringResource(R.string.common_cd_line_back), { app.engine.stepLine(-1) }, size = 48.dp)
-            RoundIcon(
-                if (state.paused) R.drawable.ic_play else R.drawable.ic_pause,
-                stringResource(if (state.paused) R.string.common_cd_resume else R.string.common_cd_pause),
-                { app.engine.togglePause() },
-                size = 68.dp,
-                bg = Palette.Accent,
-                tint = Palette.OnAccent,
-            )
-            RoundIcon(R.drawable.ic_down, stringResource(R.string.common_cd_line_forward), { app.engine.stepLine(1) }, size = 48.dp)
-            // The mode is named, not only drawn: three icons alone don't say what they do.
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            if (hidden) {
                 RoundIcon(
-                    state.scroll.icon,
-                    stringResource(R.string.common_cd_scroll_mode),
-                    { app.engine.setScroll(state.scroll.next()) },
-                    size = 48.dp,
+                    R.drawable.ic_fullscreen_exit,
+                    stringResource(R.string.rehearsal_show_controls),
+                    { setHidden(false) },
+                    size = 40.dp,
+                    bg = Palette.SurfaceHigh.copy(alpha = 0.6f),
+                    modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
                 )
-                Spacer(Modifier.height(4.dp))
-                Text(stringResource(scrollLabel(state.scroll)), style = MaterialTheme.typography.labelSmall, color = Palette.TextSecondary)
+            }
+        }
+        if (!hidden) {
+            if (landscape) {
+                Row(
+                    Modifier.fillMaxWidth().padding(start = 4.dp, end = 12.dp, top = 4.dp, bottom = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    StatusPart(state, onBack, Modifier.weight(1f))
+                    Transport(state, compact = true, Modifier.padding(horizontal = 12.dp))
+                    ViewPart(state, mirror, onView = { showView = true }, onHide = { setHidden(true) })
+                }
+            } else {
+                Transport(state, compact = false, Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 14.dp))
             }
         }
     }
@@ -255,4 +244,75 @@ fun statusOf(s: SessionEngine.State): Pair<Color, String> = when {
     s.scroll == SessionEngine.Scroll.SOUND ->
         Palette.Accent to stringResource(R.string.rehearsal_status_sound, App.instance.settings.autoScrollWpm)
     else -> Palette.Success to stringResource(R.string.rehearsal_status_listening)
+}
+
+/** Back, the listening status and the level meter. */
+@Composable
+private fun StatusPart(state: SessionEngine.State, onBack: () -> Unit, modifier: Modifier = Modifier) {
+    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
+        IconButton(onClick = onBack) { Ic(R.drawable.ic_back, stringResource(R.string.common_cd_back)) }
+        val (color, label) = statusOf(state)
+        StatusDot(color)
+        Spacer(Modifier.width(8.dp))
+        Text(
+            label,
+            style = MaterialTheme.typography.labelMedium,
+            color = Palette.TextSecondary,
+            maxLines = 1,
+            modifier = Modifier.weight(1f),
+        )
+        LevelMeter(state.levelDb, state.silencedBySystem == true || state.digitalSilence, Modifier.width(48.dp))
+    }
+}
+
+/** One labelled button for everything about how the text looks (size, margins, mirror, speed) and hiding the controls. */
+@Composable
+private fun ViewPart(state: SessionEngine.State, mirror: MirrorMode, onView: () -> Unit, onHide: () -> Unit) {
+    Spacer(Modifier.width(10.dp))
+    Text(
+        stringResource(R.string.rehearsal_view),
+        style = MaterialTheme.typography.labelLarge,
+        color = if (mirror != MirrorMode.OFF) Palette.Accent else Palette.Text,
+        modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(Palette.SurfaceHigh)
+            .clickable(onClick = onView).padding(horizontal = 14.dp, vertical = 8.dp),
+    )
+    Spacer(Modifier.width(8.dp))
+    RoundIcon(R.drawable.ic_fullscreen, stringResource(R.string.rehearsal_hide_controls), onHide, size = 36.dp)
+}
+
+/** Restart, line back, pause, line forward and the scroll mode. Compact: smaller, without the mode's name. */
+@Composable
+private fun Transport(state: SessionEngine.State, compact: Boolean, modifier: Modifier = Modifier) {
+    val app = App.instance
+    val small = if (compact) 40.dp else 48.dp
+    Row(
+        modifier,
+        horizontalArrangement = if (compact) Arrangement.spacedBy(12.dp) else Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        RoundIcon(R.drawable.ic_replay, stringResource(R.string.common_cd_restart), { app.engine.restart() }, size = small)
+        RoundIcon(R.drawable.ic_up, stringResource(R.string.common_cd_line_back), { app.engine.stepLine(-1) }, size = small)
+        RoundIcon(
+            if (state.paused) R.drawable.ic_play else R.drawable.ic_pause,
+            stringResource(if (state.paused) R.string.common_cd_resume else R.string.common_cd_pause),
+            { app.engine.togglePause() },
+            size = if (compact) 52.dp else 68.dp,
+            bg = Palette.Accent,
+            tint = Palette.OnAccent,
+        )
+        RoundIcon(R.drawable.ic_down, stringResource(R.string.common_cd_line_forward), { app.engine.stepLine(1) }, size = small)
+        // The mode is named, not only drawn: three icons alone don't say what they do. Compact keeps only the icon.
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            RoundIcon(
+                state.scroll.icon,
+                stringResource(R.string.common_cd_scroll_mode),
+                { app.engine.setScroll(state.scroll.next()) },
+                size = small,
+            )
+            if (!compact) {
+                Spacer(Modifier.height(4.dp))
+                Text(stringResource(scrollLabel(state.scroll)), style = MaterialTheme.typography.labelSmall, color = Palette.TextSecondary)
+            }
+        }
+    }
 }

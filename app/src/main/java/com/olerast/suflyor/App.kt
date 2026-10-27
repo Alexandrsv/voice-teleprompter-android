@@ -181,6 +181,11 @@ class Settings(context: Context) {
         set(v) = prefs.edit().putInt("countdownSec", v).apply()
 
     /** Full-screen prompter: text size (it may be read from a distance, so it goes bigger than in the window). */
+    /** Full-screen prompter with its controls hidden: the whole screen for the text, remote keys still work. */
+    var fullScreenControlsHidden: Boolean
+        get() = prefs.getBoolean("fullScreenControlsHidden", false)
+        set(v) = prefs.edit().putBoolean("fullScreenControlsHidden", v).apply()
+
     var fullScreenFontSp: Int
         get() = prefs.getInt("fullScreenFontSp", 30)
         set(v) = prefs.edit().putInt("fullScreenFontSp", v).apply()

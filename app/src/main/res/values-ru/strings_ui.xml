@@ -197,6 +197,8 @@
     <string name="library_cd_menu">Ещё</string>
     <string name="library_add_archive">Из резервной копии</string>
     <string name="library_add_archive_hint">Архив, сохранённый кнопкой «Сохранить все сценарии»</string>
+    <string name="rehearsal_hide_controls">Скрыть управление</string>
+    <string name="rehearsal_show_controls">Показать управление</string>
     <string name="rehearsal_view">Вид</string>
     <string name="scroll_mode_voice">Голос</string>
     <string name="scroll_mode_auto">Скорость</string>
