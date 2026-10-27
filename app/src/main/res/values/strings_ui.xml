@@ -109,6 +109,9 @@
     <string name="settings_rotate_title">Rotate for landscape recording</string>
     <string name="settings_rotate_hint">Phone on its side — the text moves next to the lens and turns</string>
     <string name="settings_lines_title">Lines in the window</string>
+    <string name="settings_margin_start_title">Left text margin</string>
+    <string name="settings_margin_end_title">Right text margin</string>
+    <string name="settings_margin_value" translatable="false">%1$d dp</string>
     <string name="settings_opacity_title">Background opacity</string>
     <string name="settings_percent_value" translatable="false">%1$d%%</string>
     <string name="settings_opacity_hint">Lower lets you see yourself through the window</string>

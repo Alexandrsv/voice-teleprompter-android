@@ -218,6 +218,8 @@ fun Prompter(
     modifier: Modifier = Modifier,
     mirrorX: Boolean = false,
     mirrorY: Boolean = false,
+    sidePadStartDp: Int = 20,
+    sidePadEndDp: Int = 16,
     onWordTap: (Int) -> Unit,
 ) {
     val highlight = App.instance.settings.wordHighlight
@@ -225,12 +227,14 @@ fun Prompter(
         factory = { ctx ->
             PrompterView(ctx).apply {
                 val d = ctx.resources.displayMetrics.density
-                setPadding((20 * d).toInt(), (10 * d).toInt(), (16 * d).toInt(), (10 * d).toInt())
+                setPadding((sidePadStartDp * d).toInt(), (10 * d).toInt(), (sidePadEndDp * d).toInt(), (10 * d).toInt())
             }
         },
         update = { v ->
             v.onWordTap = onWordTap
             v.setTextSizeSp(fontSp.toFloat())
+            val d = v.resources.displayMetrics.density
+            v.setPadding((sidePadStartDp * d).toInt(), (10 * d).toInt(), (sidePadEndDp * d).toInt(), (10 * d).toInt())
             if (v.tag !== model) {
                 v.tag = model
                 v.setScript(model)

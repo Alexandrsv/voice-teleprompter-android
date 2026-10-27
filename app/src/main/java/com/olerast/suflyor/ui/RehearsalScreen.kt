@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.olerast.suflyor.App
 import com.olerast.suflyor.R
+import com.olerast.suflyor.overlay.OverlayController
 import com.olerast.suflyor.session.SessionEngine
 
 /**
@@ -60,6 +61,8 @@ fun RehearsalScreen(onBack: () -> Unit) {
     var font by remember { mutableIntStateOf(s.fullScreenFontSp) }
     var mirror by remember { mutableStateOf(MirrorMode.of(s)) }
     var wpm by remember { mutableIntStateOf(s.autoScrollWpm) }
+    var padStart by remember { mutableIntStateOf(s.fullScreenPadStartDp) }
+    var padEnd by remember { mutableIntStateOf(s.fullScreenPadEndDp) }
     var showView by remember { mutableStateOf(false) }
     DisposableEffect(Unit) {
         view.keepScreenOn = true
@@ -112,6 +115,8 @@ fun RehearsalScreen(onBack: () -> Unit) {
                 modifier = Modifier.fillMaxSize(),
                 mirrorX = mirror.x,
                 mirrorY = mirror.y,
+                sidePadStartDp = padStart,
+                sidePadEndDp = padEnd,
                 onWordTap = { app.engine.jumpToToken(it) },
             )
             if (state.countdown > 0) {
@@ -172,6 +177,34 @@ fun RehearsalScreen(onBack: () -> Unit) {
                         s.fullScreenFontSp = font
                     },
                     valueRange = FULLSCREEN_MIN_FONT_SP.toFloat()..FULLSCREEN_MAX_FONT_SP.toFloat(),
+                    colors = SliderDefaults.colors(thumbColor = Palette.Accent, activeTrackColor = Palette.Accent),
+                    modifier = Modifier.padding(horizontal = 20.dp),
+                )
+                Row(Modifier.padding(start = 20.dp, end = 20.dp, top = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(R.string.settings_margin_start_title), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                    Text(stringResource(R.string.settings_margin_value, padStart), style = MaterialTheme.typography.titleMedium)
+                }
+                Slider(
+                    value = padStart.toFloat(),
+                    onValueChange = {
+                        padStart = ((it / 2).toInt() * 2).coerceIn(0, OverlayController.MAX_MARGIN_DP)
+                        s.fullScreenPadStartDp = padStart
+                    },
+                    valueRange = 0f..OverlayController.MAX_MARGIN_DP.toFloat(),
+                    colors = SliderDefaults.colors(thumbColor = Palette.Accent, activeTrackColor = Palette.Accent),
+                    modifier = Modifier.padding(horizontal = 20.dp),
+                )
+                Row(Modifier.padding(start = 20.dp, end = 20.dp, top = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(R.string.settings_margin_end_title), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                    Text(stringResource(R.string.settings_margin_value, padEnd), style = MaterialTheme.typography.titleMedium)
+                }
+                Slider(
+                    value = padEnd.toFloat(),
+                    onValueChange = {
+                        padEnd = ((it / 2).toInt() * 2).coerceIn(0, OverlayController.MAX_MARGIN_DP)
+                        s.fullScreenPadEndDp = padEnd
+                    },
+                    valueRange = 0f..OverlayController.MAX_MARGIN_DP.toFloat(),
                     colors = SliderDefaults.colors(thumbColor = Palette.Accent, activeTrackColor = Palette.Accent),
                     modifier = Modifier.padding(horizontal = 20.dp),
                 )
