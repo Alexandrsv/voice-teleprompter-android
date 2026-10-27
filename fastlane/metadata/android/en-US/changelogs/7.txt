@@ -1,0 +1,1 @@
+Left and right text margins you can change, in the floating window (Aa) and the full-screen prompter (View). In landscape the full-screen prompter keeps all controls in one row, and a new button hides them so the whole screen is text.

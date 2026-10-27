@@ -2,6 +2,11 @@
 
 All notable changes to Suflyor. Versions follow `versionName` in `app/build.gradle.kts`; each release's notes are taken from its section here.
 
+## 0.7 — 2026-10-27
+
+- **Text margins you can change** (thanks to @Alexandrsv): left and right, in the floating window (Aa → Left / Right) and in the full-screen prompter (View). Useful in landscape and on tablets. Changing the margins now re-wraps the text; before, the right margin had no effect. Very wide margins shrink together so the text never disappears.
+- **Full-screen prompter in landscape:** all controls share one row under the text instead of taking about half the height. A new button next to View hides the controls, so the whole screen is text; a small button in the corner brings them back. Remote keys keep working, and errors still show.
+
 ## 0.6 — 2026-10-21
 
 - **Letter names in Russian scripts.** Abbreviations written with hyphens, like "Би-ту-би" or "Эй-Ай", are now boosted in the recognizer as one word, and the text follows whether the recognizer prints them glued ("битуби") or apart ("би ту би", "би тубе"). Before, a line like "Это мои Би-ту-би Эй-Ай СааС проекты" could leave the highlight several words behind until the next line. Ordinary hyphenated words ("кто-то", "из-за") are not affected.
